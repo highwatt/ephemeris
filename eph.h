@@ -14,6 +14,7 @@
 //---------------------------------------------------------------------------
 namespace eph {
 
+	/// @brief Аналог std::streambuf который можно создать из std::string_view
 	struct streambuf_view : public std::streambuf {
 
 		streambuf_view(const char* s, std::size_t count) {
@@ -41,7 +42,7 @@ namespace eph {
 #ifdef _MSC_VER
 		fopen_s(&file, filename.data(), mode);
 #else
-		file = fopen(file_name.data(), mode);
+		file = fopen(filename.data(), mode);
 #endif
 		return file;
 	}
@@ -223,8 +224,8 @@ namespace eph {
 				//игнорируем файлы "header.*", "testpo.*", "*.txt", "*.bin"
 				if (cur_path.stem() != header && 
 					cur_path.stem() != testpo && 
-					cur_path.extension().string() != txt &&
-					cur_path.extension().string() != bin)
+					cur_path.extension() != txt &&
+					cur_path.extension() != bin)
 					file_list.push_back(cur_path);
 			}
 
@@ -495,8 +496,13 @@ namespace eph {
 			order,
 			sub_intervals,
 			total
-		};		
+		};
 
+		/// @brief Вычисляет эфемериды для объекта target на дату jd и записывает в массив x.
+		/// @param jd - Юлианская дата, на которую запрашиваются эфемериды.
+		/// @param target - Идентификатор объекта для которого запрашиваются эфемериды.
+		/// @param x - Массив результатов.
+		/// @exception Бросает исключение std::out_of_range в случае target >= num_targets_.
 		void calculate(double jd, series target, double x[6]) {
 
 			if (to_underlying(target) >= num_targets_) throw std::out_of_range("Wrong target index.");
@@ -655,41 +661,41 @@ namespace eph {
 				if (content[i] == 'D') content[i] = 'e';
 		}
 
-		//буфер для хранения имен констант
+		/// @brief Буфер для хранения имен констант.
 		struct Fixbuf { char buf[7] = { 0 }; };
 
-		//максимальный порядок полинома
+		/// @brief Максимальный порядок полинома.
 		static constexpr size_t max_poly_order = 18;
 		
-		//массив имен констант
+		/// @brief  Массив имен констант.
 		std::vector<Fixbuf> const_names_;
 
-		//массив констант
+		/// @brief Массив констант.
 		std::vector<double> const_values_ = { 0.0 };
 
-		//двумерный массив коэффициентов полиномов Чебышева
-		//размером [n x columns_], где n - количество секций
-		//индекс секции, соответствующей конкретной дате
-		//возвращает функция date_to_index
+		/// @brief Двумерный массив коэффициентов полиномов Чебышева
+		/// размером [n x columns_], где n - количество секций.
+		/// Индекс секции, соответствующей конкретной дате
+		/// возвращает функция date_to_index.
 		std::vector<double> coefficients_ = { 0.0 };
 
-		//параметры для доступа к коэффициентам полиномов Чебышева для каждой планеты
-		//матрица 3х15
+		/// @brief Параметры для доступа к коэффициентам полиномов Чебышева для каждой планеты
+		/// матрица [3 х 15]
 		size_t layout_[to_underlying(poly::total)][to_underlying(series::total)] = { 0 };
 
-		//дата начала и конца эфемерид
+		/// @brief Дата начала и конца эфемерид из заголовочного файла.
+		/// Фактические даты начала и конца эфемерид из файлов с коэффициентами.
 		double jd_begin_ = { 0.0 }, jd_end_ = { 0.0 }, fact_jd_begin_= { 0.0 }, fact_jd_end_= { 0.0 };
 
-		//количество дней в секции
+		/// @brief Количество дней в секции.
 		double section_days_ = { 0.0 };		
 
-		//количество столбцов в матрице коэффициентов полиномов Чебышева
-		//columns = NCOEF
+		/// @brief Количество столбцов в матрице коэффициентов полиномов Чебышева
+		/// columns_ = NCOEF.
 		size_t columns_ = { 0 };		
 		
-		// количество объектов для эфемерид может быть 13 или 15 == poly::total
-		// num_targets_ - фактическое количество объектов, определяется из header.XXX
+		/// @brief Количество объектов для эфемерид может быть 13 или 15 == poly::total.
+		/// num_targets_ - фактическое количество объектов, определяется из header.XXX.
 		size_t num_targets_ = { 0 };
 	};	
 }//end of eph namespace
-//---------------------------------------------------------------------------

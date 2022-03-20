@@ -1,5 +1,5 @@
 # Ephemeris
-Simple C++ header only library for working with EPM and DE ephemeries. Current version was tested for all DE ephemeris from **DE102** to **DE441** and for **EPM2021** ephemeris.
+Simple C++ 20 header only library for working with EPM and DE ephemeries. Current version was tested for all DE ephemeris from **DE102** to **DE441** and for **EPM2021** ephemeris.
 
 # Usage
 Download ASCII data files for DE or EPM ephemeris:
