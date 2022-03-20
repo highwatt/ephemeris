@@ -65,8 +65,8 @@ namespace eph {
 	}
 
 	/// @brief Идентификаторы объектов для которых могут быть запрошены эфемериды: 
-	/// 0 - Mercury, 1 - Venus, 2 - Earth, 3 - Mars, 4 - Jupiter, 
-	///	5 - Saturn, 6 - Uranus, 7 - Neptune, 8 - Pluto, 9 - Moon, 10 - Sun, 
+	/// 0 - Mercury, 1 - Venus, 2 - Earth, 3 - Mars, 4 - Jupiter,
+	///	5 - Saturn, 6 - Uranus, 7 - Neptune, 8 - Pluto, 9 - Moon, 10 - Sun,
 	///	11 - Solar-System barycenter, 12 - Earth-Moon barycenter, 17 - Moon (geocentric),
 	/// 13 - Earth Nutations, 14 - Lunar mantle libration, 15 - Lunar mantle angular velocity,
 	/// 16 - Terrestrial Time (TT) - Barycentric Dynamical Time (TDB), 17 - Moon (geocentric)
@@ -119,8 +119,8 @@ namespace eph {
 
 		static constexpr double epsilon = 1e-13;
 		/// @brief Вычисляет эфемериды для объекта target.
-		/// Для target = 0 - Mercury, 1 - Venus, 2 - Earth, 3 - Mars, 4 - Jupiter, 
-		///	5 - Saturn, 6 - Uranus, 7 - Neptune, 8 - Pluto, 9 - Moon, 10 - Sun, 
+		/// Для target = 0 - Mercury, 1 - Venus, 2 - Earth, 3 - Mars, 4 - Jupiter,
+		///	5 - Saturn, 6 - Uranus, 7 - Neptune, 8 - Pluto, 9 - Moon, 10 - Sun,
 		///	11 - Solar-System barycenter, 12 - Earth-Moon barycenter, 17 - Moon (geocentric)
 		/// массив результатов содержит [x, y, z, vx, vy, vz], координаты в км, скорость в км/с.
 		/// 
@@ -691,5 +691,5 @@ namespace eph {
 		// num_targets_ - фактическое количество объектов, определяется из header.XXX
 		size_t num_targets_ = { 0 };
 	};	
-}//end of epf namespace
+}//end of eph namespace
 //---------------------------------------------------------------------------

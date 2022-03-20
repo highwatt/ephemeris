@@ -1,49 +1,32 @@
 # Ephemeris
-Simple C++ header only library for working with EPM and DE ephemeries.
+Simple C++ header only library for working with EPM and DE ephemeries. Current version was tested for all DE ephemeris from **DE102** to **DE441** and for **EPM2021** ephemeris.
 
 # Usage
+Download ASCII data files for DE or EPM ephemeris:
+* [Development Ephemeris by JPL](https://ssd.jpl.nasa.gov/ftp/eph/planets/ascii/ "Jet Propulsion Laboratory (JPL)").
+* [Ephemeris of Planets and Moon by IAARAS](https://ftp.iaaras.ru/pub/epm/EPM2021/DE/ "Institute of Applied Astronomy of the Russian Academy of Sciences (IAARAS)").
+
+ASCII data files must have't *.txt or *.bin extensions. If there are, rename them. 
 
 ```cpp
 #include "eph.h"
 int main() {
 
-	///test all DE ephemeris
-	std::filesystem::path base = "D:\\Projects\\eph\\ascii";
-	eph::ephemeris().import_and_test(base / "de102");   
-	eph::ephemeris().import_and_test(base / "de200");   
-	eph::ephemeris().import_and_test(base / "de202");   
-	eph::ephemeris().import_and_test(base / "de403");   
-	eph::ephemeris().import_and_test(base / "de405");   
-	eph::ephemeris().import_and_test(base / "de406");   
-	eph::ephemeris().import_and_test(base / "de410");   
-	eph::ephemeris().import_and_test(base / "de421");   
-	eph::ephemeris().import_and_test(base / "de422");   
-	eph::ephemeris().import_and_test(base / "de423");   
-	eph::ephemeris().import_and_test(base / "de424");   
-	eph::ephemeris().import_and_test(base / "de430");    
-	eph::ephemeris().import_and_test(base / "de430t");   
-	eph::ephemeris().import_and_test(base / "de431");   //need ~3.3.Gb memory allocated
-	eph::ephemeris().import_and_test(base / "de432");   
-	eph::ephemeris().import_and_test(base / "de432t");  
-	eph::ephemeris().import_and_test(base / "de433");   
-	eph::ephemeris().import_and_test(base / "de434");   
-	eph::ephemeris().import_and_test(base / "de435");   
-	eph::ephemeris().import_and_test(base / "de436");   
-	eph::ephemeris().import_and_test(base / "de436t");  
-	eph::ephemeris().import_and_test(base / "de438");   
-	eph::ephemeris().import_and_test(base / "de438t");  
-	eph::ephemeris().import_and_test(base / "de440");   
-	eph::ephemeris().import_and_test(base / "de440t");  
-	eph::ephemeris().import_and_test(base / "de441");   //need ~3.5.Gb memory allocated
-
-	/// simple usage
+	/// Set your path to downloaded ASCII data files 
+	std::filesystem::path base = "D:\\Projects\\eph\\ascii";	
+	/// Create ephemeris object
 	eph::ephemeris e;
+	/// Load from ASCII files and test
 	e.import_and_test(base / "de440t");
+	/// Save to binary file
 	e.save(base / "de440t" / "440t.bin");
+	/// Load from binary file
 	e.load(base / "de440t" / "440t.bin");
+	/// And test
 	e.test(base / "de440t" / "testpo.440t");
 
 	double x[6] = { 0 };
+	/// Get ephemeris data for Earth
 	e.state(2520576.5, eph::targets::earth, x);
 
 	for (auto val : x)
