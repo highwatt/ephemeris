@@ -13,6 +13,42 @@ ASCII data files must have't ****.txt*** or ****.bin*** extensions. If there are
 int main() {
 
 	/// Set your path to downloaded ASCII data files 
+	std::filesystem::path base = "D:\\Projects\\eph\\ascii";
+
+	double x[6] = { 0 };
+	/// Test EPM ephemeris
+	eph::ephemeris epm;
+	/// Import ASCII files from epm2021 folder
+	epm.import(base / "epm2021");
+	/// Get ephemeris data for Earth
+	epm.state(eph::date::jd(2022, 5, 30), eph::targets::earth, x);
+
+	for (auto val : x)
+		std::cout << val << std::endl; 
+	
+	double y[6] = { 0 };
+	/// Test DE ephemeris
+	eph::ephemeris de;
+	/// /// Import ASCII files from de440t folder
+	de.import(base / "de440t");
+	/// Get ephemeris data for Earth
+	de.state(eph::date::jd(2022, 5, 30), eph::targets::earth, y);
+
+	for (auto val : y)
+		std::cout << val << std::endl;
+
+	system("pause");
+
+return 0;
+}
+```
+
+Reading ASCII files may be very slow. You may save data to binary file and use it permanently. Binary file also have smaller size.
+```cpp
+#include "eph.h"
+int main() {
+
+	/// Set your path to downloaded ASCII data files 
 	std::filesystem::path base = "D:\\Projects\\eph\\ascii";	
 	/// Create ephemeris object
 	eph::ephemeris e;
@@ -22,12 +58,10 @@ int main() {
 	e.save(base / "de440t" / "440t.bin");
 	/// Load from binary file
 	e.load(base / "de440t" / "440t.bin");
-	/// And test
-	e.test(base / "de440t" / "testpo.440t");
 
 	double x[6] = { 0 };
-	/// Get ephemeris data for Earth
-	e.state(2520576.5, eph::targets::earth, x);
+	/// Get ephemeris data for Earth-Moon Barycenter
+	e.state(eph::date::jd(2022, 5, 30), eph::targets::earth_moon_barycenter, x);
 
 	for (auto val : x)
 		std::cout << val << std::endl;
