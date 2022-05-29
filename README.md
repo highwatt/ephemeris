@@ -1,12 +1,12 @@
 # Ephemeris
-Simple C++ 20 header only library for working with EPM and DE ephemeries. Current version was tested for all DE ephemeris from **DE102** to **DE441** and for **EPM2021** ephemeris.
+Simple C++ 20 header only library for reading EPM and DE ephemeries. Current version was tested for all DE ephemeris from **DE102** to **DE441** and for **EPM2021** ephemeris.
 
 # Usage
 Download ASCII data files for DE or EPM ephemeris:
 * [Development Ephemeris by JPL](https://ssd.jpl.nasa.gov/ftp/eph/planets/ascii/ "Jet Propulsion Laboratory (JPL)").
 * [Ephemeris of Planets and Moon by IAARAS](https://ftp.iaaras.ru/pub/epm/EPM2021/DE/ "Institute of Applied Astronomy of the Russian Academy of Sciences (IAARAS)").
 
-ASCII data files must have't *.txt or *.bin extensions. If there are, rename them. 
+ASCII data files must have't ****.txt*** or ****.bin*** extensions. If there are, rename them. File extensions must match. For example **EPM2021** ephemeris have two files: ***epm2021_de_ascii.txt*** and ***header.21***. Just rename ***epm2021_de_ascii.txt*** to ***epm2021_de_ascii.21***. 
 
 ```cpp
 #include "eph.h"

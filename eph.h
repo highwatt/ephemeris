@@ -14,6 +14,114 @@
 //---------------------------------------------------------------------------
 namespace eph {
 
+	/// @brief Алгоритмы преобразования дат взяты из: 
+	/// Meeus J. Astronomical algorithms. 2nd ed. // Willmann-Bell, Inc. 1998
+	namespace date {
+
+		namespace julian {
+
+			/// преобразует Юлианскую дату в Юлианский день        
+			inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) {
+
+				if (month < 3) {
+					month += 12;
+					year -= 1;
+				}
+				double jdn = floor(365.25 * (year + 4716)) + floor(30.6001 * (month + 1)) + day - 1524.5;
+				return jdn + hour / 24. + minute / 1440. + sec / 86400.;
+			}
+
+			/// преобразует Юлианский день в Юлианскую дату 
+			inline auto jd(double val) {
+
+				double a;
+				double f = modf(val + 0.5, &a);
+				double b = a + 1524;
+				double c = floor((b - 122.1) / 365.25);
+				double d = floor(365.25 * c);
+
+				long month = static_cast<long>(floor((b - d) / 30.6001));
+				long day = static_cast<long>(b - d - floor(30.6001 * month) + f);
+				long year = static_cast<long>(c - 4715);
+
+				if (month < 14) month -= 1;
+				else month -= 13;
+				if (month > 2) year -= 1;
+
+				long hour = static_cast<long>((a = day - long(day)) * 24L);
+				long minute = static_cast<long>((a -= hour / 24.) * 1440L);
+				long sec = static_cast<long>((a -= minute / 1440.) * 86400L);
+
+				return std::make_tuple(year, month, day, hour, minute, sec);
+			}
+		}		
+
+		namespace grigorian {
+			/// преобразует Григорианскую дату в Юлианский день
+			inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) {
+
+				if (month < 3) {
+					month += 12;
+					year -= 1;
+				}
+
+				double jdn = floor(365.25 * (year + 4716)) + floor(30.6001 * (month + 1)) + day - 1524.5;
+				double a = trunc(0.01 * year);
+				return jdn + 2.0 - a + trunc(0.25 * a) + hour / 24. + minute / 1440. + sec / 86400.;
+			}
+			/// преобразует Юлианский день в Григорианскую дату
+			inline auto jd(double val) {
+				
+				double z;
+				double f = modf(val + 0.5, &z);
+				double g = floor((z - 1867216.25) / 36524.25);
+				double a = z + 1 + g - floor(g / 4);
+				double b = a + 1524;
+				double c = floor((b - 122.1) / 365.25);
+				double d = floor(365.25 * c);
+
+				long month = static_cast<long>(floor((b - d) / 30.6001));
+				long day = static_cast<long>(b - d - floor(30.6001 * month) + f);
+				long year = static_cast<long>(c - 4715);
+
+				if (month < 14) month -= 1;
+				else month -= 13;
+				if (month > 2) year -= 1;
+
+				long hour = static_cast<long>((a = day - long(day)) * 24L);
+				long minute = static_cast<long>((a -= hour / 24.) * 1440L);
+				long sec = static_cast<long>((a -= minute / 1440.) * 86400L);
+
+				return std::make_tuple(year, month, day, hour, minute, sec);
+			}
+		}
+		
+		constexpr long days_after_christ(long year, long month, long day) {
+			return day + 31 * (month + 12 * year);
+		}		
+
+		/// преобразует дату в Юлианский день
+		inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) {			
+
+			constexpr long grigorian_begin = days_after_christ(1582, 10, 15); //15 Oct 1582
+			/// даты до начала Григорианского календаря считаем по Юлианскому календарю
+			if (days_after_christ(year, month, day) < grigorian_begin)
+				return julian::jd(year, month, day);
+			else
+				return grigorian::jd(year, month, day);
+		}
+
+		/// преобразует Юлианский день в дату
+		inline auto jd(double val) {
+
+			/// даты до начала Григорианского календаря считаем по Юлианскому календарю
+			if (val < 2299161)
+				return julian::jd(val);
+			else
+				return grigorian::jd(val);
+		}
+	}
+
 	/// @brief Аналог std::streambuf который можно создать из std::string_view
 	struct streambuf_view : public std::streambuf {
 
@@ -123,7 +231,7 @@ namespace eph {
 		/// Для target = 0 - Mercury, 1 - Venus, 2 - Earth, 3 - Mars, 4 - Jupiter,
 		///	5 - Saturn, 6 - Uranus, 7 - Neptune, 8 - Pluto, 9 - Moon, 10 - Sun,
 		///	11 - Solar-System barycenter, 12 - Earth-Moon barycenter, 17 - Moon (geocentric)
-		/// массив результатов содержит [x, y, z, vx, vy, vz], координаты в км, скорость в км/с.
+		/// массив результатов содержит [x, y, z, vx, vy, vz], координаты в км, скорость в км/день.
 		/// 
 		/// Для target = 13 - Earth Nutations
 		/// массив результатов содержит [dpsi, depsilon, 0, 0, 0, 0], рад.
@@ -135,9 +243,9 @@ namespace eph {
 		/// массив результатов содержит [omega_x,omega_y,omega_z, 0, 0, 0], рад/день.
 		/// 
 		/// Для target = 16 - Terrestrial Time (TT) - Barycentric Dynamical Time (TDB)
-		/// массив результатов содержит [dt, 0, 0, 0, 0, 0], с.
+		/// массив результатов содержит [dt, 0, 0, 0, 0, 0], разность земного и динамического времени, с.
 		/// 
-		/// @param jd - Юлианская дата, на которую запрашиваются эфемериды.
+		/// @param d - Юлианская дата, на которую запрашиваются эфемериды.
 		/// @param target - Идентификатор объекта для которого запрашиваются эфемериды.
 		/// @param x - Массив результатов.
 		/// @exception Бросает исключение std::out_of_range в случае target >= 18(total).
@@ -255,7 +363,7 @@ namespace eph {
 			size_t size = columns_ * (date_to_index(jd_end_) + 1);
 
 			//Для импорта полного диапазона эфемерид de431 или de441 требуется выделить больше 2Гб памяти
-			//Это возможно только при компиляции x64 версии. Для x32 выводим предупреждение. 
+			//Это возможно только при компиляции x64 версии. Для x86 выводим предупреждение. 
 			//Далее coefficients_.resize бросит std::bad_alloc. 
 			if (size * sizeof(double) > INT_MAX && sizeof(void*) != 8)
 				std::cout << std::format("Target platform is x86. Ephemeris de{} require more then 2Gb memory allocation, and can't be read.\n", ext);
@@ -306,7 +414,7 @@ namespace eph {
 
 			if (fact_jd_begin_ != jd_begin_ || fact_jd_end_ != jd_end_)
 				std::cout << "WARNING : Missmatch range that ephemeris covers:\nfrom header.xxx Start Epoch : " << 
-				std::format("JED = {} Final Epoch : JED = {}\nfrom data files Start Epoch: JED={} Final Epoch: JED={}\n", jd_begin_, jd_end_, fact_jd_begin_, fact_jd_end_);
+				std::format("JED = {} Final Epoch : JED = {}\nfrom data files Start Epoch: JED={} Final Epoch : JED={}\n", jd_begin_, jd_end_, fact_jd_begin_, fact_jd_end_);
 		}
 
 		/// @brief Запускает тест из файла testpo.xxx
@@ -335,6 +443,16 @@ namespace eph {
 			std::cout << "--MSG--   de# ---date---  ---jed--- t# c# x# --coordinate--  --difference--\n";
 
 			while (stream >> n >> year >> c >> month >> c >> day >> jd >> target >> center >> index >> test_value) {
+				
+				double myjd = date::jd(year, month, day);
+
+				if(myjd != jd)
+					std::cout << std::format("WARNING   : jd {} != myjd {} from {}-{}-{} - Invalid date conversion\n", jd, myjd, year, month, day);
+
+				auto [year1, month1, day1, hour, minute, seconds] = date::jd(jd);
+
+				if (year1 != year || month1 != month || day1 != day) 
+					std::cout << std::format("WARNING   : {}-{}-{} != {}-{}-{} from jd={} - Invalid date conversion\n", year, month, day, year1, month1, day1, jd);
 
 				std::string date = std::format("{}.{}.{}", year, month, day);
 
@@ -347,7 +465,7 @@ namespace eph {
 
 				//эфемериды для target
 				state(jd, targets(target), target_data);
-
+				
 				//эфемериды для center
 				if (center != 0) state(jd, targets(--center), center_data);
 				else center_data[index] = 0.0;
@@ -407,7 +525,7 @@ namespace eph {
 			const_names_.resize(n);
 			const_values_.resize(n);
 			//массив имен констант
-			fread(&const_names_[0], sizeof(Fixbuf), n, file);
+			fread(&const_names_[0], sizeof(fixbuf), n, file);
 			//массив констант
 			fread(&const_values_[0], sizeof(double), n, file);
 
@@ -442,7 +560,7 @@ namespace eph {
 			//количество констант
 			fwrite(&n, sizeof(n), 1, file);
 			//массив имен констант
-			fwrite(&const_names_[0], sizeof(Fixbuf), n, file);
+			fwrite(&const_names_[0], sizeof(fixbuf), n, file);
 			//массив констант
 			fwrite(&const_values_[0], sizeof(double), n, file);
 
@@ -498,8 +616,8 @@ namespace eph {
 			total
 		};
 
-		/// @brief Вычисляет эфемериды для объекта target на дату jd и записывает в массив x.
-		/// @param jd - Юлианская дата, на которую запрашиваются эфемериды.
+		/// @brief Вычисляет эфемериды для объекта target на дату d и записывает в массив x.
+		/// @param d - Юлианская дата, на которую запрашиваются эфемериды.
 		/// @param target - Идентификатор объекта для которого запрашиваются эфемериды.
 		/// @param x - Массив результатов.
 		/// @exception Бросает исключение std::out_of_range в случае target >= num_targets_.
@@ -517,23 +635,23 @@ namespace eph {
 			//дробят на подинтервалы со своим набором коэффициентов. time_cover и есть количество подинтервалов   
 			size_t time_cover = layout_[to_underlying(poly::sub_intervals)][to_underlying(target)];
 
-			//индекс секции, которой принадлежит jd
+			//индекс секции, которой принадлежит d
 			//отнимаем эпсилон, чтобы индекс секции соответствовал интервалу (jd1, jd2]
-			//в противном случае, при jd==jd2 date_to_index вернет индекс следующей секции,
+			//в противном случае, при d==jd2 date_to_index вернет индекс следующей секции,
 			//что для последней секции приведет к выходу индекса за диапазон
-			size_t section = date_to_index(jd - 0.5);
+			size_t section = date_to_index(jd - 0.5); //is
 
 			//дата начала секции
-			double t_section = jd_begin_ + section * section_days_;
+			double t_section = jd_begin_ + section * section_days_; //jds
 
 			//временной диапазон подинтервала
-			size_t date_subinterval = size_t(section_days_ / time_cover);
+			size_t date_subinterval = size_t(section_days_ / time_cover); //dsub
 
 			//индекс - смещение от начала секции
-			size_t sub_shift = size_t((jd - t_section - 0.5) / date_subinterval);
+			size_t sub_shift = size_t((jd - t_section - 0.5) / date_subinterval);//isub
 
 			//дата начала подинтервала
-			double t_sub = t_section + sub_shift * date_subinterval;
+			double t_sub = t_section + sub_shift * date_subinterval;//tsub
 
 			//размерность вектора
 			size_t dim = target == series::earth_nutation ? 2 : (target == series::delta_time ? 1 : 3);
@@ -573,7 +691,7 @@ namespace eph {
 		}
 
 		/// @brief Возвращает индекс секции, соответствующий конкретной дате.
-		/// @param jd - Юлианская дата.
+		/// @param d - Юлианская дата.
 		/// @return Индекс в массиве coefficients_.
 		size_t date_to_index(double jd) {
 
@@ -662,13 +780,13 @@ namespace eph {
 		}
 
 		/// @brief Буфер для хранения имен констант.
-		struct Fixbuf { char buf[7] = { 0 }; };
+		struct fixbuf { char buf[7] = { 0 }; };
 
 		/// @brief Максимальный порядок полинома.
 		static constexpr size_t max_poly_order = 18;
 		
 		/// @brief  Массив имен констант.
-		std::vector<Fixbuf> const_names_;
+		std::vector<fixbuf> const_names_;
 
 		/// @brief Массив констант.
 		std::vector<double> const_values_ = { 0.0 };
@@ -698,4 +816,4 @@ namespace eph {
 		/// num_targets_ - фактическое количество объектов, определяется из header.XXX.
 		size_t num_targets_ = { 0 };
 	};	
-}//end of eph namespace
+}/// end of eph namespace
