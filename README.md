@@ -59,12 +59,23 @@ int main() {
 	/// Load from binary file
 	e.load(base / "de440t" / "440t.bin");
 
-	double x[6] = { 0 };
+	double state[6] = { 0 };
 	/// Get ephemeris data for Earth-Moon Barycenter
-	e.state(eph::date::jd(2022, 5, 30), eph::targets::earth_moon_barycenter, x);
-
-	for (auto val : x)
+	e.state(eph::date::jd(2022, 5, 30), eph::targets::earth_moon_barycenter, state);
+	
+	for (auto val : state)
 		std::cout << val << std::endl;
+	
+	/// Get ephemeris data using structured binding
+	auto [x, y, z, vx, vy, vz] = e.state(eph::date::jd(2022, 5, 30), eph::targets::moon);
+
+	std::cout 
+		<< "x = " << x << std::endl
+		<< "y = " << y << std::endl
+		<< "z = " << z << std::endl
+		<< "vx = " << vx << std::endl
+		<< "vy = " << vy << std::endl
+		<< "vz = " << vz << std::endl;	
 
 	system("pause");
 

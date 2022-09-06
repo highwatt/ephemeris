@@ -11,6 +11,7 @@
 #include <cassert>
 #include <string_view>
 #include <format>
+#include <tuple>
 //---------------------------------------------------------------------------
 namespace eph {
 
@@ -144,7 +145,7 @@ namespace eph {
 	};
 
 	/// @brief Открывает файл. Под MSVC использует безопасную версию. 
-	FILE* openfile(std::string_view filename, char const* mode) {
+	inline FILE* openfile(std::string_view filename, char const* mode) {
 
 		FILE* file = nullptr;
 #ifdef _MSC_VER
@@ -159,7 +160,7 @@ namespace eph {
 	/// @param filename - Имя файла для чтения
 	/// @param str - Строка для записи
 	/// @exeption Бросает исключение std::runtime_error в случае невозможности открыть файл.
-	void getcontent(std::string_view filename, std::string& str) {
+	inline void getcontent(std::string_view filename, std::string& str) {
 		
 		FILE* file = openfile(filename, "rb");
 		if (!file) throw std::runtime_error(std::string(filename) + " - file not found");
@@ -298,6 +299,13 @@ namespace eph {
 				case targets::delta_time:				calculate(jd, series::delta_time, x); break;
 				default: throw std::out_of_range("Wrong target index."); break;
 			}
+		}
+
+		auto state(double jd, targets target) {
+
+			double x[6];
+			state(jd, target, x);
+			return std::make_tuple(x[0], x[1], x[2], x[3], x[4], x[5]);
 		}
 
 		/// @brief Читает текстовые ASCII файлы с эфемеридами из каталога 
@@ -460,6 +468,25 @@ namespace eph {
 					std::cout << std::format("WARNING : {} {} {} {} {} {} {} - Coordinates not found\n", n, date, jd, target, center, index, test_value);
 					continue;
 				}
+				/* Target number in the testpo.XXX:
+				 1 - Mercury
+C                2 - Venus 
+C                3 - Earth (geocenter)
+C                4 - Mars (system barycenter)
+C                5 - Jupiter (system barycenter)
+C                6 - Saturn (system barycenter)
+C                7 - Uranus (system barycenter)
+C                8 - Neptune (system barycenter)
+C                9 - Pluto (system barycenter)
+C                10 - Moon
+C                11 - Sun
+C                12 - Solar System Barycenter
+C                13 - Earth-Moon Barycenter
+C                14 - 1980 IAU nutation angles
+C                15 - Lunar libration (Euler) angles
+C                16 - Lunar angular velocity
+C                17 - TT-TDB (at geocenter)
+				*/
 				//корректируем индексы т.к. в файле индексация с единицы
 				target--, index--;
 
@@ -624,16 +651,18 @@ namespace eph {
 		void calculate(double jd, series target, double x[6]) {
 
 			if (to_underlying(target) >= num_targets_) throw std::out_of_range("Wrong target index.");
+			
+			//если в диапазоне не удается обеспечить требуемую точность его (диапазон)
+			//дробят на подинтервалы со своим набором коэффициентов. time_cover и есть количество подинтервалов   
+			size_t time_cover = layout_[to_underlying(poly::sub_intervals)][to_underlying(target)];
+
+			if (time_cover == 0)  throw std::out_of_range("Item #'" + std::to_string(to_underlying(target)) + "' not stored on the ascii files." );
 
 			//смещение коэффициентов для тела target от начала секции
 			size_t coeff_begin = layout_[to_underlying(poly::coeff_begin)][to_underlying(target)] - layout_[0][0];
 
 			//порядок полинома
-			size_t poly_order = layout_[to_underlying(poly::order)][to_underlying(target)];
-
-			//если в диапазоне не удается обеспечить требуемую точность его (диапазон)
-			//дробят на подинтервалы со своим набором коэффициентов. time_cover и есть количество подинтервалов   
-			size_t time_cover = layout_[to_underlying(poly::sub_intervals)][to_underlying(target)];
+			size_t poly_order = layout_[to_underlying(poly::order)][to_underlying(target)];			
 
 			//индекс секции, которой принадлежит d
 			//отнимаем эпсилон, чтобы индекс секции соответствовал интервалу (jd1, jd2]
