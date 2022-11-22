@@ -1,8 +1,8 @@
 # Ephemeris
-Simple C++ 20 header only library for reading EPM and DE ephemeries. Current version was tested for all DE ephemeris from **DE102** to **DE441** and for **EPM2021** ephemeris.
+Simple C++ 20 header only library for reading EPM and DE ephemerides. Current version was tested for all DE ephemerides from **DE102** to **DE441** and for **EPM2021** ephemerides.
 
 # Usage
-Download ASCII data files for DE or EPM ephemeris:
+Download ASCII data files for DE or EPM ephemerides:
 * [Development Ephemeris by JPL](https://ssd.jpl.nasa.gov/ftp/eph/planets/ascii/ "Jet Propulsion Laboratory (JPL)").
 * [Ephemeris of Planets and Moon by IAARAS](https://ftp.iaaras.ru/pub/epm/EPM2021/DE/ "Institute of Applied Astronomy of the Russian Academy of Sciences (IAARAS)").
 
