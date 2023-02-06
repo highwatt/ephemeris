@@ -29,7 +29,7 @@ int main() {
 	double y[6] = { 0 };
 	/// Test DE ephemeris
 	eph::ephemeris de;
-	/// /// Import ASCII files from de440t folder
+	/// Import ASCII files from de440t folder
 	de.import(base / "de440t");
 	/// Get ephemeris data for Earth
 	de.state(eph::date::jd(2022, 5, 30), eph::targets::earth, y);
@@ -81,4 +81,12 @@ int main() {
 
 return 0;
 }
+```
+You can also use the std::chrono dates & time "sugar"
+```cpp
+	using namespace std::chrono_literals;
+	using namespace std::chrono;	
+	
+	/// Get ephemeris data using std::chrono format of dates & time
+	auto [x, y, z, vx, vy, vz] = e.state(eph::date::jd(May/30/2022, 5h+10min), eph::targets::moon);
 ```

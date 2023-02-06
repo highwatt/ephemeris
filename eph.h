@@ -12,6 +12,7 @@
 #include <string_view>
 #include <format>
 #include <tuple>
+#include <chrono>
 //---------------------------------------------------------------------------
 namespace eph {
 
@@ -19,18 +20,22 @@ namespace eph {
 	/// Meeus J. Astronomical algorithms. 2nd ed. // Willmann-Bell, Inc. 1998
 	namespace date {
 
+		using namespace std::chrono_literals;
+
 		namespace julian {
 
 			/// преобразует Юлианскую дату в Юлианский день        
 			inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) {
 
 				if (month < 3) {
+
 					month += 12;
 					year -= 1;
 				}
 				double jdn = floor(365.25 * (year + 4716)) + floor(30.6001 * (month + 1)) + day - 1524.5;
 				return jdn + hour / 24. + minute / 1440. + sec / 86400.;
 			}
+		
 
 			/// преобразует Юлианский день в Юлианскую дату 
 			inline auto jd(double val) {
@@ -110,6 +115,20 @@ namespace eph {
 				return julian::jd(year, month, day);
 			else
 				return grigorian::jd(year, month, day);
+		}
+
+		/// преобразует Юлианскую дату в Юлианский день 
+		inline double jd(std::chrono::year_month_day ymd, std::chrono::duration<long long> hms = 0s) {
+
+			auto years   = static_cast<int>(ymd.year());
+			auto months  = static_cast<unsigned int>(ymd.month());
+			auto days    = static_cast<unsigned int>(ymd.day());
+
+			long hours   = std::chrono::duration_cast<std::chrono::hours>(hms).count();
+			long minutes = std::chrono::duration_cast<std::chrono::minutes>(hms).count();
+			long long seconds = std::chrono::duration_cast<std::chrono::seconds>(hms).count();
+
+			return jd(years, months, days, hours, minutes, static_cast<long>(seconds));
 		}
 
 		/// преобразует Юлианский день в дату
