@@ -1,5 +1,5 @@
 # C++ Ephemeris
-Simple C++ 20 header only library for reading EPM and DE ephemerides. Current version was tested for all DE ephemerides from **DE102** to **DE441** and for **EPM2021** ephemerides. À description of the algorithms used is available in a publication [Practical use of EPM and DE ephemeris. Trudy MAI, 2022, no. 125](https://doi.org/10.34759/trd-2022-125-18) (in Russian).
+Simple C++ 20 header only library for reading EPM and DE ephemerides. Current version was tested for all DE ephemerides from **DE102** to **DE441** and for **EPM2021** ephemerides. A description of the algorithms used is available in a publication [Practical use of EPM and DE ephemeris. Trudy MAI, 2022, no. 125](https://doi.org/10.34759/trd-2022-125-18) (in Russian).
 
 # Usage
 Download ASCII data files for DE or EPM ephemerides:
