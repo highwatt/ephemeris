@@ -1,14 +1,14 @@
-# C++ Ephemeris
-[![ru](https://img.shields.io/badge/lang-ru-red.svg)](https://github.com/highwatt/ephemeris/blob/main/README.ru.md)
+# С++ Эфемериды
+[![en](https://img.shields.io/badge/lang-en-blue.svg)](https://github.com/highwatt/ephemeris/blob/main/README.md)
 
-Simple C++ 20 header only library for reading EPM and DE ephemerides. Current version was tested for all DE ephemerides from **DE102** to **DE441** and for **EPM2021** ephemerides. A description of the algorithms used is available in a publication [Practical use of EPM and DE ephemeris. Trudy MAI, 2022, no. 125](https://doi.org/10.34759/trd-2022-125-18) (in Russian).
+Простая библиотека, написанная на C++ 20 для чтения эфемерид EPM, созданных Институтом прикладной астрономии Российской академии наук (ИПА РАН) и DE эфемерид, созданных JPL NASA. Текущая версия библиотеки была протестирована с эфемеридами **EPM2021**, а также с DE эфемеридами, начиная с **DE102** и заканчивая **DE441**. Описание используемых в библиотеке алгоритмов можно найти в публикации [Практическое использование эфемерид EPM и DE. Труды МАИ, 2022, № 125](https://doi.org/10.34759/trd-2022-125-18).
 
-# Usage
-Download ASCII data files for DE or EPM ephemerides:
-* [Development Ephemeris by JPL](https://ssd.jpl.nasa.gov/ftp/eph/planets/ascii/ "Jet Propulsion Laboratory (JPL)").
-* [Ephemeris of Planets and Moon by IAARAS](https://ftp.iaaras.ru/pub/epm/EPM2021/DE/ "Institute of Applied Astronomy of the Russian Academy of Sciences (IAARAS)").
+# Использование эфемерид
+Скачайте файлы с данными для DE или EPM эфемерид в формате ASCII:
+* [JPL Development Ephemeris](https://ssd.jpl.nasa.gov/ftp/eph/planets/ascii/ "Jet Propulsion Laboratory (JPL)").
+* [Эфемериды ИПА РАН](https://ftp.iaaras.ru/pub/epm/EPM2021/DE/ "Institute of Applied Astronomy of the Russian Academy of Sciences (IAARAS)").
 
-ASCII data files must have't ****.txt*** or ****.bin*** extensions. If there are, rename them. File extensions must match. For example **EPM2021** ephemeris have two files: ***epm2021_de_ascii.txt*** and ***header.21***. Just rename ***epm2021_de_ascii.txt*** to ***epm2021_de_ascii.21***. 
+Для работы библиотеки файлы с данными не должны иметь расширений ****.txt*** or ****.bin***. Эти расширения зарезервированы для работы библиотеки. Если скаченные файлы имеют такие раширения их необходимо переименовать в любые другие, но расширения фалов должны совпадать. Например, эфемериды **EPM2021** состоят из двух файлов: ***epm2021_de_ascii.txt*** и ***header.21***. Просто переименуйте файл ***epm2021_de_ascii.txt*** в ***epm2021_de_ascii.21***. Ниже приведен код для импорта данных EPM и DE эфемерид и печати эфемерид Земли на определенную дату.
 
 ```cpp
 #include "eph.h"
@@ -45,7 +45,7 @@ return 0;
 }
 ```
 
-Reading ASCII files may be very slow. You may save data to binary file and use it permanently. Binary file also have smaller size.
+Импорт ASCII файлов может быть очень медленным. Для решения этой проблемы предусмотрена возможность сохранения данных эфемерид в двоичный файл. Загрузка двоичного файла происходит гораздо быстрее и он также имеет меньший размер.
 ```cpp
 #include "eph.h"
 int main() {
@@ -84,7 +84,7 @@ int main() {
 return 0;
 }
 ```
-You can also use the **std::chrono** dates & time "sugar"
+Вы также можете использовать для даты и времени синтаксический "сахар" в виде литералов из пространства имен **std::chrono** стандартной библиотеки.
 ```cpp
 	using namespace std::chrono_literals;
 	using namespace std::chrono;	
