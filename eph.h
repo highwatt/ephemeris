@@ -16,26 +16,29 @@
 //---------------------------------------------------------------------------
 namespace eph {
 
+	template< class Enum >
+	static constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept {
+		return static_cast<std::underlying_type_t<Enum>>(e);
+	}
 	/// @brief Алгоритмы преобразования дат взяты из: 
 	/// Meeus J. Astronomical algorithms. 2nd ed. // Willmann-Bell, Inc. 1998
 	namespace date {
 
 		using namespace std::chrono_literals;
+		using namespace std::chrono;
 
 		namespace julian {
 
 			/// преобразует Юлианскую дату в Юлианский день        
-			inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) {
+			inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) noexcept {
 
-				if (month < 3) {
-
-					month += 12;
-					year -= 1;
+				if (month < 3L) {
+					month += 12L;
+					year -= 1L;
 				}
-				double jdn = floor(365.25 * (year + 4716)) + floor(30.6001 * (month + 1)) + day - 1524.5;
+				double jdn = floor(365.25 * (year + 4716L)) + floor(30.6001 * (month + 1L)) + day - 1524.5;
 				return jdn + hour / 24. + minute / 1440. + sec / 86400.;
 			}
-		
 
 			/// преобразует Юлианский день в Юлианскую дату 
 			inline auto jd(double val) {
@@ -60,11 +63,11 @@ namespace eph {
 
 				return std::make_tuple(year, month, day, hour, minute, sec);
 			}
-		}		
+		}
 
 		namespace grigorian {
 			/// преобразует Григорианскую дату в Юлианский день
-			inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) {
+			inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) noexcept {
 
 				if (month < 3) {
 					month += 12;
@@ -77,7 +80,7 @@ namespace eph {
 			}
 			/// преобразует Юлианский день в Григорианскую дату
 			inline auto jd(double val) {
-				
+
 				double z;
 				double f = modf(val + 0.5, &z);
 				double g = floor((z - 1867216.25) / 36524.25);
@@ -101,13 +104,13 @@ namespace eph {
 				return std::make_tuple(year, month, day, hour, minute, sec);
 			}
 		}
-		
+
 		constexpr long days_after_christ(long year, long month, long day) {
 			return day + 31 * (month + 12 * year);
-		}		
+		}
 
-		/// преобразует дату в Юлианский день
-		inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) {			
+		/// преобразует Юлианскую дату в Юлианский день
+		inline double jd(long year, long month, long day, long hour = 0, long minute = 0, long sec = 0) {
 
 			constexpr long grigorian_begin = days_after_christ(1582, 10, 15); //15 Oct 1582
 			/// даты до начала Григорианского календаря считаем по Юлианскому календарю
@@ -116,22 +119,21 @@ namespace eph {
 			else
 				return grigorian::jd(year, month, day);
 		}
-
 		/// преобразует Юлианскую дату в Юлианский день 
 		inline double jd(std::chrono::year_month_day ymd, std::chrono::duration<long long> hms = 0s) {
 
-			auto years   = static_cast<int>(ymd.year());
-			auto months  = static_cast<unsigned int>(ymd.month());
-			auto days    = static_cast<unsigned int>(ymd.day());
+			auto years = static_cast<int>(ymd.year());
+			auto months = static_cast<unsigned int>(ymd.month());
+			auto days = static_cast<unsigned int>(ymd.day());
 
-			long hours   = std::chrono::duration_cast<std::chrono::hours>(hms).count();
+			long hours = std::chrono::duration_cast<std::chrono::hours>(hms).count();
 			long minutes = std::chrono::duration_cast<std::chrono::minutes>(hms).count();
 			long long seconds = std::chrono::duration_cast<std::chrono::seconds>(hms).count();
 
 			return jd(years, months, days, hours, minutes, static_cast<long>(seconds));
 		}
 
-		/// преобразует Юлианский день в дату
+		/// преобразует Юлианский день в Юлианскую дату
 		inline auto jd(double val) {
 
 			/// даты до начала Григорианского календаря считаем по Юлианскому календарю
@@ -150,17 +152,15 @@ namespace eph {
 			this->setg(p, p, p + count);
 		}
 		streambuf_view(std::string_view str) :
-			streambuf_view(str.data(), str.size()) {
-		}
-	};	
+			streambuf_view(str.data(), str.size()) {}
+	};
 
 	/// @brief Аналог std::istringstream который можно создать из буфера без копирования
 	class istringstream_view : private virtual streambuf_view, public std::istream {
 	public:
 		istringstream_view(std::string_view str)
 			: streambuf_view(str)
-			, std::istream(this) {
-		}
+			, std::istream(this) {}
 	};
 
 	/// @brief Открывает файл. Под MSVC использует безопасную версию. 
@@ -180,7 +180,7 @@ namespace eph {
 	/// @param str - Строка для записи
 	/// @exeption Бросает исключение std::runtime_error в случае невозможности открыть файл.
 	inline void getcontent(std::string_view filename, std::string& str) {
-		
+
 		FILE* file = openfile(filename, "rb");
 		if (!file) throw std::runtime_error(std::string(filename) + " - file not found");
 
@@ -199,7 +199,7 @@ namespace eph {
 	///	11 - Solar-System barycenter, 12 - Earth-Moon barycenter, 17 - Moon (geocentric),
 	/// 13 - Earth Nutations, 14 - Lunar mantle libration, 15 - Lunar mantle angular velocity,
 	/// 16 - Terrestrial Time (TT) - Barycentric Dynamical Time (TDB), 17 - Moon (geocentric)
-	enum class targets {
+	enum class targets : size_t {
 
 		mercury,				///  0 - Mercury
 		venus,					///  1 - Venus
@@ -227,7 +227,8 @@ namespace eph {
 	/// @param order - порядок полинома Чебышева
 	/// @param pos - результат, коэффициенты полинома Чебышева для вычисления положения
 	/// @param vel - результат, коэффициенты полинома Чебышева для вычисления скорости 
-	inline void fill_poly(double t, size_t order, double pos[], double vel[]) {
+	template<class T>
+	inline void fill_poly(T t, size_t order, T pos[], T vel[]) noexcept {
 
 		pos[0] = 1.0;
 		pos[1] = t;
@@ -245,6 +246,11 @@ namespace eph {
 	/// @brief Для работы с эфемеридами необходимо создать объекть типа ephemeris.
 	/// Например: eph::ephemeris e; e.import_and_test("path to directory with ascii data files");
 	struct ephemeris {
+
+		ephemeris() = default;
+		explicit ephemeris(std::filesystem::path const& binary_file_name) {
+			load(binary_file_name);
+		}
 
 		static constexpr double epsilon = 1e-13;
 		/// @brief Вычисляет эфемериды для объекта target.
@@ -269,60 +275,61 @@ namespace eph {
 		/// @param target - Идентификатор объекта для которого запрашиваются эфемериды.
 		/// @param x - Массив результатов.
 		/// @exception Бросает исключение std::out_of_range в случае target >= 18(total).
-		void state(double jd, targets target, double x[6]) {
+		template<class T>
+		void state(T jd, targets target, T x[6]) {
 
 			switch (target) {
-				case targets::mercury:	calculate(jd, series::mercury, x); break;
-				case targets::venus:	calculate(jd, series::venus, x); break;
-				case targets::earth: {
+			case targets::mercury:	calculate(jd, series::mercury, x); break;
+			case targets::venus:	calculate(jd, series::venus, x); break;
+			case targets::earth: {
 
-					double moon_geo[6];
-					double factor = 1.0 / (1.0 + constant("EMRAT"));
+				T moon_geo[6];
+				double factor = 1.0 / (1.0 + constant("EMRAT"));
 
-					calculate(jd, series::earth_moon_barycenter, x);
-					calculate(jd, series::moon_geocentric, moon_geo);					
+				calculate(jd, series::earth_moon_barycenter, x);
+				calculate(jd, series::moon_geocentric, moon_geo);
 
-					for (size_t i = 0; i < 6; ++i)
-						x[i] -= moon_geo[i] * factor;
+				for (size_t i = 0; i < 6; ++i)
+					x[i] -= moon_geo[i] * factor;
 
-					break;
+				break;
+			}
+			case targets::mars:		calculate(jd, series::mars, x); break;
+			case targets::jupiter:	calculate(jd, series::jupiter, x); break;
+			case targets::saturn:	calculate(jd, series::saturn, x); break;
+			case targets::uranus:	calculate(jd, series::uranus, x); break;
+			case targets::neptune:	calculate(jd, series::neptune, x); break;
+			case targets::pluto:	calculate(jd, series::pluto, x); break;
+			case targets::moon: {
+
+				T earth[6];
+				double factor = 1.0 / (1.0 + constant("EMRAT"));
+
+				calculate(jd, series::earth_moon_barycenter, earth);
+				calculate(jd, series::moon_geocentric, x);
+
+				for (size_t i = 0; i < 6; ++i) {
+					earth[i] -= x[i] * factor;
+					x[i] += earth[i];
 				}
-				case targets::mars:		calculate(jd, series::mars, x); break;
-				case targets::jupiter:	calculate(jd, series::jupiter, x); break;
-				case targets::saturn:	calculate(jd, series::saturn, x); break;
-				case targets::uranus:	calculate(jd, series::uranus, x); break;
-				case targets::neptune:	calculate(jd, series::neptune, x); break;
-				case targets::pluto:	calculate(jd, series::pluto, x); break;
-				case targets::moon: {
 
-					double earth[6];
-					double factor = 1.0 / (1.0 + constant("EMRAT"));
-
-					calculate(jd, series::earth_moon_barycenter, earth);
-					calculate(jd, series::moon_geocentric, x);
-
-					for (size_t i = 0; i < 6; ++i) {
-						earth[i] -= x[i] * factor;
-						x[i] += earth[i];
-					}
-
-					break;
-				}
-				case targets::sun:						calculate(jd, series::sun, x); break;
-				case targets::solar_system_barycenter:	memset(&x[0], 0, 6 * sizeof(double)); break;
-				case targets::earth_moon_barycenter:	calculate(jd, series::earth_moon_barycenter, x); break;
-				case targets::earth_nutation:			calculate(jd, series::earth_nutation, x); break;
-				case targets::lunar_libration:			calculate(jd, series::lunar_libration, x); break;
-				case targets::moon_geocentric:			calculate(jd, series::moon_geocentric, x); break;
-				case targets::lunar_angular_velocity:	calculate(jd, series::lunar_angular_velocity, x); break;
-				case targets::delta_time:				calculate(jd, series::delta_time, x); break;
-				default: throw std::out_of_range("Wrong target index."); break;
+				break;
+			}
+			case targets::sun:						calculate(jd, series::sun, x); break;
+			case targets::solar_system_barycenter:	memset(&x[0], 0, 6 * sizeof(double)); break;
+			case targets::earth_moon_barycenter:	calculate(jd, series::earth_moon_barycenter, x); break;
+			case targets::earth_nutation:			calculate(jd, series::earth_nutation, x); break;
+			case targets::lunar_libration:			calculate(jd, series::lunar_libration, x); break;
+			case targets::moon_geocentric:			calculate(jd, series::moon_geocentric, x); break;
+			case targets::lunar_angular_velocity:	calculate(jd, series::lunar_angular_velocity, x); break;
+			case targets::delta_time:				calculate(jd, series::delta_time, x); break;
+			default: throw std::out_of_range("Wrong target index."); break;
 			}
 		}
+		template<class T>
+		auto state(T jd, targets target) {
 
-		auto state(double jd, targets target) {
-
-			double x[6];
+			T x[6];
 			state(jd, target, x);
 			return std::make_tuple(x[0], x[1], x[2], x[3], x[4], x[5]);
 		}
@@ -350,32 +357,32 @@ namespace eph {
 			namespace fs = std::filesystem;
 
 			std::vector<fs::path> file_list;
-			fs::path header{ L"header" }, testpo{ L"testpo" }, txt{L".txt"}, bin{L".bin"};
+			fs::path header{ L"header" }, testpo{ L"testpo" }, txt{ L".txt" }, bin{ L".bin" };
 
 			for (const auto& entry : fs::directory_iterator(directory)) {
 
 				const auto& cur_path = entry.path();
 				//заполняем вектор именами файлов
 				//игнорируем файлы "header.*", "testpo.*", "*.txt", "*.bin"
-				if (cur_path.stem() != header && 
-					cur_path.stem() != testpo && 
+				if (cur_path.stem() != header &&
+					cur_path.stem() != testpo &&
 					cur_path.extension() != txt &&
 					cur_path.extension() != bin)
 					file_list.push_back(cur_path);
 			}
 
-			std::string ext = file_list.front().extension().string(), content;				
+			std::string ext = file_list.front().extension().string(), content;
 			//открываем файл заголовка				
-			std::ifstream file(directory / header.concat(ext), std::ios::binary);				
+			std::ifstream file(directory / header.concat(ext), std::ios::binary);
 			//Некоторые файлы заголовка имеют в имени расширения количество констант
 			if (!file) {
-					
-				std::wstring_view add_ext[] = { {L"_571"}, {L"_572"}, {L"_576"} };				
+
+				std::wstring_view add_ext[] = { { L"_571" },{ L"_572" },{ L"_576" } };
 				for (auto& e : add_ext) {
 					fs::path new_header = header;
 					file.open(directory / new_header += e, std::ios::binary);
 					if (file) break;
-				}					
+				}
 				if (!file) throw std::runtime_error(header.string() + " - file not found");
 			}
 
@@ -404,7 +411,7 @@ namespace eph {
 				std::cout << "Reading: " << entry << std::endl;
 
 				//читаем содержимое файла в строку
-				getcontent(entry.string(), content);				
+				getcontent(entry.string(), content);
 
 				//предварительно правим 'D' на 'e'
 				fix_exponent(content);
@@ -431,8 +438,8 @@ namespace eph {
 					//читаем коэффициенты
 					for (; j < e; ++j) {
 						char next = stream.peek();
-						//обрабатываем ситуацию, когда в последнией строке секции меньше 3-х коэффициентов
-						if (next == '\n' && (j % n > n-3))
+						//обрабатываем ситуацию, когда в последней строке секции меньше 3-х коэффициентов
+						if (next == '\n' && (j % n > n - 3))
 							break;
 						stream >> coefficients_[j];
 					}
@@ -440,17 +447,17 @@ namespace eph {
 			}
 
 			if (fact_jd_begin_ != jd_begin_ || fact_jd_end_ != jd_end_)
-				std::cout << "WARNING : Missmatch range that ephemeris covers:\nfrom header.xxx Start Epoch : " << 
+				std::cout << "WARNING : Mismatch range that ephemeris covers:\nfrom header.xxx Start Epoch : " <<
 				std::format("JED = {} Final Epoch : JED = {}\nfrom data files Start Epoch: JED={} Final Epoch : JED={}\n", jd_begin_, jd_end_, fact_jd_begin_, fact_jd_end_);
 		}
 
 		/// @brief Запускает тест из файла testpo.xxx
 		/// @param file_name - Путь, включая имя файла testpo.xxx
-		/// @exeption Бросает исключение std::runtime_error в случае невозможности открыть файл.
+		/// @exception Бросает исключение std::runtime_error в случае невозможности открыть файл.
 		void test(std::filesystem::path const& file_name) {
 
 			std::cout << std::format("Ephemeris test: {}\n", file_name.string());
-	
+
 			std::string content;
 			//читаем содержимое файла в строку
 			getcontent(file_name.string(), content);
@@ -461,7 +468,8 @@ namespace eph {
 			std::istringstream stream(content.substr(pos + 3, std::string::npos));
 
 			double jd, test_value;
-			double target_data[6], center_data[6];
+			constexpr size_t state_size = 6;
+			double target_data[state_size], center_data[state_size];
 
 			size_t n, target, center, index, iter = 0;
 			long year, month, day;
@@ -470,15 +478,15 @@ namespace eph {
 			std::cout << "--MSG--   de# ---date---  ---jed--- t# c# x# --coordinate--  --difference--\n";
 
 			while (stream >> n >> year >> c >> month >> c >> day >> jd >> target >> center >> index >> test_value) {
-				
+
 				double myjd = date::jd(year, month, day);
 
-				if(myjd != jd)
+				if (myjd != jd)
 					std::cout << std::format("WARNING   : jd {} != myjd {} from {}-{}-{} - Invalid date conversion\n", jd, myjd, year, month, day);
 
 				auto [year1, month1, day1, hour, minute, seconds] = date::jd(jd);
 
-				if (year1 != year || month1 != month || day1 != day) 
+				if (year1 != year || month1 != month || day1 != day)
 					std::cout << std::format("WARNING   : {}-{}-{} != {}-{}-{} from jd={} - Invalid date conversion\n", year, month, day, year1, month1, day1, jd);
 
 				std::string date = std::format("{}.{}.{}", year, month, day);
@@ -487,31 +495,12 @@ namespace eph {
 					std::cout << std::format("WARNING : {} {} {} {} {} {} {} - Coordinates not found\n", n, date, jd, target, center, index, test_value);
 					continue;
 				}
-				/* Target number in the testpo.XXX:
-				 1 - Mercury
-C                2 - Venus 
-C                3 - Earth (geocenter)
-C                4 - Mars (system barycenter)
-C                5 - Jupiter (system barycenter)
-C                6 - Saturn (system barycenter)
-C                7 - Uranus (system barycenter)
-C                8 - Neptune (system barycenter)
-C                9 - Pluto (system barycenter)
-C                10 - Moon
-C                11 - Sun
-C                12 - Solar System Barycenter
-C                13 - Earth-Moon Barycenter
-C                14 - 1980 IAU nutation angles
-C                15 - Lunar libration (Euler) angles
-C                16 - Lunar angular velocity
-C                17 - TT-TDB (at geocenter)
-				*/
 				//корректируем индексы т.к. в файле индексация с единицы
 				target--, index--;
 
 				//эфемериды для target
 				state(jd, targets(target), target_data);
-				
+				assert(index < state_size && "Out of range index.");
 				//эфемериды для center
 				if (center != 0) state(jd, targets(--center), center_data);
 				else center_data[index] = 0.0;
@@ -519,9 +508,9 @@ C                17 - TT-TDB (at geocenter)
 				double delta = target_data[index] - center_data[index];
 
 				//если target не нутация или либрация, или скорость вращения мантии, или TT-TDB переводим в А.Е.
-				if (target != to_underlying(targets::earth_nutation) && 
-					target != to_underlying(targets::lunar_libration) && 
-					target != to_underlying(targets::lunar_angular_velocity) && 
+				if (target != to_underlying(targets::earth_nutation) &&
+					target != to_underlying(targets::lunar_libration) &&
+					target != to_underlying(targets::lunar_angular_velocity) &&
 					target != to_underlying(targets::delta_time))
 					delta /= constant("AU");
 
@@ -563,7 +552,7 @@ C                17 - TT-TDB (at geocenter)
 			//количество столбцов в матрице коэффициентов полиномов Чебышева
 			fread(&columns_, sizeof(columns_), 1, file);
 			fread(&num_targets_, sizeof(num_targets_), 1, file);
-			
+
 			size_t n = 0;
 			//количество констант
 			fread(&n, sizeof(n), 1, file);
@@ -618,9 +607,27 @@ C                17 - TT-TDB (at geocenter)
 			//параметры для интерполяции
 			fwrite(&layout_[0], sizeof(layout_), 1, file);
 			fclose(file);
-		}	
-
-		//линейный поиск константы по имени
+		}
+		///линейный поиск константы по имени	
+		///DENUM           Planetary ephemeris number.
+		///LENUM           Lunar ephemeris number.
+		///TDATEF, TDATEB  Dates of the Forward and Backward Integrations
+		///CLIGHT          Speed of light (km/s).
+		///AU              Number of kilometers per astronomical unit.
+		///EMRAT           Earth-Moon mass ratio.
+		///GMi             GM for ith planet [au**3/day**2].
+		///GMB             GM for the Earth-Moon Barycenter [au**3/day**2].
+		///GMS             Sun (= k**2) [au**3/day**2].
+		///X1, ..., ZD9    Initial conditions for the numerical integration,
+		///                given at "JDEPOC", with respect to "CENTER".
+		///JDEPOC          Epoch (JED) of initial conditions, normally JED 2440400.5.
+		///CENTER          Reference center for the initial conditions.
+		///                (Sun: 11,  Solar System Barycenter: 12)
+		///MAiiii          GM's of asteroid number iiii [au**3/day**2].
+		///PHI, THT, PSI   Euler angles of the orientation of the lunar mantle.
+		///OMEGAX, ...     Rotational velocities of the lunar mantle.
+		///PHIC,THTC,PSIC  Euler angles of the orientation of the lunar core.
+		///OMGCX, ...      Rotational velocities of the lunar core.
 		double constant(std::string_view name) const {
 
 			for (size_t i = 0, e = const_names_.size(); i < e; ++i)
@@ -647,15 +654,10 @@ C                17 - TT-TDB (at geocenter)
 			lunar_libration,		//12 - Lunar mantle libration (Euler) angles
 			lunar_angular_velocity,	//13 - Lunar mantle angular velocity
 			delta_time,				//14 - TT - TDB(at geocenter)
-			total			
-		};	
+			total
+		};
 
-		template< class Enum >
-		static constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept {
-			return static_cast<std::underlying_type_t<Enum>>(e);
-		}
-
-		enum class poly : size_t  {
+		enum class poly : size_t {
 			coeff_begin,
 			order,
 			sub_intervals,
@@ -667,27 +669,28 @@ C                17 - TT-TDB (at geocenter)
 		/// @param target - Идентификатор объекта для которого запрашиваются эфемериды.
 		/// @param x - Массив результатов.
 		/// @exception Бросает исключение std::out_of_range в случае target >= num_targets_.
-		void calculate(double jd, series target, double x[6]) {
+		template<class T>
+		void calculate(T jd, series target, T x[6]) {
 
 			if (to_underlying(target) >= num_targets_) throw std::out_of_range("Wrong target index.");
-			
+
 			//если в диапазоне не удается обеспечить требуемую точность его (диапазон)
 			//дробят на подинтервалы со своим набором коэффициентов. time_cover и есть количество подинтервалов   
 			size_t time_cover = layout_[to_underlying(poly::sub_intervals)][to_underlying(target)];
 
-			if (time_cover == 0)  throw std::out_of_range("Item #'" + std::to_string(to_underlying(target)) + "' not stored on the ascii files." );
+			if (time_cover == 0)  throw std::out_of_range("Item #'" + std::to_string(to_underlying(target)) + "' not stored on the ascii files.");
 
 			//смещение коэффициентов для тела target от начала секции
 			size_t coeff_begin = layout_[to_underlying(poly::coeff_begin)][to_underlying(target)] - layout_[0][0];
 
 			//порядок полинома
-			size_t poly_order = layout_[to_underlying(poly::order)][to_underlying(target)];			
+			size_t poly_order = layout_[to_underlying(poly::order)][to_underlying(target)];
 
 			//индекс секции, которой принадлежит d
 			//отнимаем эпсилон, чтобы индекс секции соответствовал интервалу (jd1, jd2]
 			//в противном случае, при d==jd2 date_to_index вернет индекс следующей секции,
 			//что для последней секции приведет к выходу индекса за диапазон
-			size_t section = date_to_index(jd - 0.5); //is
+			size_t section = date_to_index(value_of(jd) - 0.5); //is
 
 			//дата начала секции
 			double t_section = jd_begin_ + section * section_days_; //jds
@@ -696,10 +699,7 @@ C                17 - TT-TDB (at geocenter)
 			size_t date_subinterval = size_t(section_days_ / time_cover); //dsub
 
 			//индекс - смещение от начала секции
-			size_t sub_shift = size_t((jd - t_section - 0.5) / date_subinterval);//isub
-
-			//дата начала подинтервала
-			double t_sub = t_section + sub_shift * date_subinterval;//tsub
+			size_t sub_shift = size_t((value_of(jd) - t_section - 0.5) / date_subinterval);//isub			
 
 			//размерность вектора
 			size_t dim = target == series::earth_nutation ? 2 : (target == series::delta_time ? 1 : 3);
@@ -707,19 +707,26 @@ C                17 - TT-TDB (at geocenter)
 			//индекс начала коэффициентов
 			size_t i = section * columns_ + coeff_begin + sub_shift * dim * poly_order;
 
+			//дата начала подинтервала
+			double t_sub = t_section + sub_shift * date_subinterval;//tsub
+
 			//нормализованное время [-1, 1]
-			double normal_time = 2.0 * (jd - t_sub) / date_subinterval - 1.0;
+			T normal_time = 2.0 * (jd - t_sub) / double(date_subinterval) - 1.0;
 
 			//полиномы для положения и скорости
-			double pos_poly[max_poly_order], vel_poly[max_poly_order];
+			T pos_poly[max_poly_order], vel_poly[max_poly_order];
 
 			assert(poly_order < max_poly_order && "Invalid Chebyshev polynom order");
 
 			//вычисляем полиномы
 			fill_poly(normal_time, poly_order, pos_poly, vel_poly);
 
-			//обнулим память
-			memset(x, 0, 6 * sizeof(double));
+			x[0] = 0.0;
+			x[1] = 0.0;
+			x[2] = 0.0;
+			x[3] = 0.0;
+			x[4] = 0.0;
+			x[5] = 0.0;
 
 			double* y = &coefficients_[i];
 
@@ -727,28 +734,32 @@ C                17 - TT-TDB (at geocenter)
 			//т.к. для сохранения точности складываем сначала
 			//слагаемые с наименьшими значениями
 			for (size_t j = 0; j < dim; ++j) {
-				for (size_t k = poly_order; k --> 0; ) {
+				for (size_t k = poly_order; k-- > 0; ) {
 					//положение
 					x[j] += y[j * poly_order + k] * pos_poly[k];
 					//скорость
 					x[j + dim] += y[j * poly_order + k] * vel_poly[k];
 				}
 
-				x[j + dim] *= 2.0 / date_subinterval;
+				x[j + dim] *= 2.0 / double(date_subinterval);
 			}
 		}
+
+		template<class T>
+		double value_of(T const& v) { return value(v); }
+		double value_of(double v) { return v; }
 
 		/// @brief Возвращает индекс секции, соответствующий конкретной дате.
 		/// @param d - Юлианская дата.
 		/// @return Индекс в массиве coefficients_.
-		size_t date_to_index(double jd) {
+		size_t date_to_index(double jd) const {
 
-			return size_t( (jd - jd_begin_) / section_days_ );
+			return size_t((jd - jd_begin_) / section_days_);
 		}
 
 		/// @brief Читает заголовочный файл эфемерид header.XXX.
 		/// @param content - содержимое файла header.XXX.
-		void read_header(std::string_view const& content) {		
+		void read_header(std::string_view const& content) {
 
 			size_t pos1010 = content.find("GROUP   1010", 0);
 			size_t pos1030 = content.find("GROUP   1030", pos1010);
@@ -756,7 +767,7 @@ C                17 - TT-TDB (at geocenter)
 			size_t pos1041 = content.find("GROUP   1041", pos1040);
 			size_t pos1050 = content.find("GROUP   1050", pos1041);
 			size_t pos1070 = content.find("GROUP   1070", pos1050);
-			
+
 			//количество символов в имени группы
 			size_t n = 12;
 			std::string_view head_line = content.substr(0, pos1010);
@@ -765,14 +776,14 @@ C                17 - TT-TDB (at geocenter)
 			std::string_view group1040 = content.substr(pos1040 + n, pos1041 - pos1040 - n);
 			std::string_view group1041 = content.substr(pos1041 + n, pos1050 - pos1041 - n);
 			std::string_view group1050 = content.substr(pos1050 + n, pos1070 - pos1050 - n);
-			
+
 			{//читаем количество коэффициентов в секции
 				char ncoeff[] = "NCOEFF=";
-				size_t pos = head_line.find("NCOEFF=", 0);
+				size_t pos = head_line.find(ncoeff, 0);
 				istringstream_view stream(head_line.substr(pos + sizeof(ncoeff)));
 				stream >> columns_;
 			}
-			
+
 			{//читаем группу 1030 даты начала и конца секции
 				istringstream_view stream(group1030);
 				stream >> jd_begin_ >> jd_end_ >> section_days_;
@@ -784,7 +795,7 @@ C                17 - TT-TDB (at geocenter)
 				const_names_.resize(n);
 				for (size_t i = 0; i < n; ++i)
 					stream >> const_names_[i].buf;
-			}			
+			}
 
 			{//читаем группу 1041 значения констант, предварительно правим 'D' на 'e'
 				std::string tmp(group1041);
@@ -795,14 +806,14 @@ C                17 - TT-TDB (at geocenter)
 				for (size_t i = 0; i < n; ++i)
 					stream >> const_values_[i];
 			}
-			
+
 			auto skip_spaces = [](std::istream& st) {
 				while (1) {
 					char next = st.peek();
 					if (next != ' ') return;
 					st.get();
 				}
-			};
+				};
 
 			{//читаем группу 1050 параметры для интерполяции
 				istringstream_view stream(group1050);
@@ -820,7 +831,7 @@ C                17 - TT-TDB (at geocenter)
 			}
 		}
 
-		/// @brief Правим 'D'(Fortran) на 'e'(C++) в показателях экcпоненты.
+		/// @brief Правим 'D'(Fortran) на 'e'(C++) в показателях экспоненты.
 		/// @param content - Строка с данными.
 		void fix_exponent(std::string& content) {
 			for (size_t i = 0, n = content.size(); i < n; ++i)
@@ -832,7 +843,7 @@ C                17 - TT-TDB (at geocenter)
 
 		/// @brief Максимальный порядок полинома.
 		static constexpr size_t max_poly_order = 18;
-		
+
 		/// @brief  Массив имен констант.
 		std::vector<fixbuf> const_names_;
 
@@ -851,17 +862,17 @@ C                17 - TT-TDB (at geocenter)
 
 		/// @brief Дата начала и конца эфемерид из заголовочного файла.
 		/// Фактические даты начала и конца эфемерид из файлов с коэффициентами.
-		double jd_begin_ = { 0.0 }, jd_end_ = { 0.0 }, fact_jd_begin_= { 0.0 }, fact_jd_end_= { 0.0 };
+		double jd_begin_ = { 0.0 }, jd_end_ = { 0.0 }, fact_jd_begin_ = { 0.0 }, fact_jd_end_ = { 0.0 };
 
 		/// @brief Количество дней в секции.
-		double section_days_ = { 0.0 };		
+		double section_days_ = { 0.0 };
 
 		/// @brief Количество столбцов в матрице коэффициентов полиномов Чебышева
 		/// columns_ = NCOEF.
-		size_t columns_ = { 0 };		
-		
+		size_t columns_ = { 0 };
+
 		/// @brief Количество объектов для эфемерид может быть 13 или 15 == poly::total.
 		/// num_targets_ - фактическое количество объектов, определяется из header.XXX.
 		size_t num_targets_ = { 0 };
-	};	
+	};
 }/// end of eph namespace
